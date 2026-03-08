@@ -218,14 +218,7 @@ php artisan serve
 
 Open app:
 
-http://127.0.0.1:8000
-🔑 Default Test Accounts
-Admin
-Email: admin@gmail.com
-Password: Password@1
-Customer
-Email: user@gmail.com
-Password: Password@1
+
 📸 Screenshots
 
 
