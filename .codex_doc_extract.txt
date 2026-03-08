@@ -1,0 +1,13 @@
+Admin System Improvement Suggestions
+This document lists recommended improvements and advanced features for the 'Hotel Booking System with Web-Based Virtual Tour (Villa Diana Hotel)' admin panel.
+Suggested UI & Functional Improvements
+3. Occupancy / Booking Chart – Show bookings per month using a visual chart (Chart.js).
+4. Global Admin Search – Add a search bar to quickly find bookings, rooms, or customers.
+5. Reservation Calendar – Visual calendar showing room availability and booked dates.
+6. Room Availability Indicator – Display whether a room is available, booked today, or unavailable.
+9. Export Reports – Allow admin to export booking and revenue reports to PDF or Excel.
+10. Booking Filters – Filter reservations by date, room type, or booking status.
+11. The graphs and tables in dashboard must be included in the download pdf
+5 Killer Features (High-Impact Features for Defense)
+4. Booking Timeline / Reservation History – Admin can view a timeline of all bookings and activities for each room.
+5. Admin Activity Logs – Tracks actions performed by the admin such as confirming bookings, deleting records, or editing rooms.

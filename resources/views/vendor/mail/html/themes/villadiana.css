@@ -1,0 +1,58 @@
+
+body, body * {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.wrapper {
+    background: #f6f7fb !important;
+}
+
+.inner-body {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,.06) !important;
+}
+
+.content-cell {
+    padding: 28px !important;
+}
+
+h1, h2, h3 {
+    color: #0F172B !important; /* dark navy */
+}
+
+p {
+    color: #374151 !important;
+    line-height: 1.55 !important;
+}
+
+.button-primary {
+    background: #FEA116 !important; /* Villa Diana gold */
+    border: 1px solid #FEA116 !important;
+    border-radius: 10px !important;
+}
+
+.panel {
+    border-left: 4px solid #FEA116 !important;
+    background: #F1F8FF !important;
+    border-radius: 12px !important;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.badge-success {
+  background: rgba(22,163,74,.12);
+  color: #16a34a;
+}
+
+.badge-danger {
+  background: rgba(220,38,38,.12);
+  color: #dc2626;
+}
