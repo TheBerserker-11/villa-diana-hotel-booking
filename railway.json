@@ -1,0 +1,5 @@
+{
+  "build": {
+    "packages": ["php82Packages.gd"]
+  }
+}
