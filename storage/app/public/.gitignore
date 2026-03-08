@@ -1,2 +1,8 @@
 *
 !.gitignore
+!avatars/
+!avatars/**
+!events/
+!events/**
+!rooms/
+!rooms/**
