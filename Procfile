@@ -1,1 +1,1 @@
-web: php artisan serve --host=0.0.0.0 --port=$PORT
+web: mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache && php artisan config:clear && php artisan cache:clear && php artisan serve --host=0.0.0.0 --port=$PORT
