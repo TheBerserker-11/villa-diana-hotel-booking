@@ -172,18 +172,6 @@
     }
     .auth-links a:hover{ text-decoration: underline; }
 
-    .privacy-link,
-    .terms-link{
-        color: #FEA116;
-        font-weight: 600;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    .privacy-link:hover,
-    .terms-link:hover{
-        text-decoration: underline;
-    }
-
     .divider{
         display:flex;
         align-items:center;
@@ -482,6 +470,7 @@
     $isStep2 = (session('otp_sent') && !session('otp_verified'));
     $isStep3 = (session('otp_verified'));
 
+    // ✅ Redirect persistence (read-only here)
     $redirect = request('redirect') ?? session('redirect');
 @endphp
 
@@ -608,10 +597,9 @@
 
                                         <div class="d-flex align-items-start gap-2 mb-3">
                                             <input type="checkbox" class="form-check-input mt-1" id="privacy" name="privacy" required disabled>
-                                            <div style="font-size:.95rem;">
-                                                <span>I agree to the </span>
-                                                <a href="javascript:void(0)" id="privacyLink" class="privacy-link">Data Privacy Policy</a>
-                                            </div>
+                                            <label class="form-check-label" for="privacy" style="font-size:.95rem;">
+                                                I agree to the <a href="#" class="auth-links" id="privacyLink">Data Privacy Policy</a>
+                                            </label>
                                         </div>
 
                                         <button type="submit" class="btn btn-vd w-100" id="sendOtpBtn">
@@ -729,6 +717,7 @@
                                                    value="{{ old('phone') }}"
                                                    required
                                                    inputmode="numeric"
+                                                   autocomplete="off"
                                                    maxlength="11">
                                             <label for="phone" class="ps-5">Phone</label>
                                             @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -784,10 +773,9 @@
 
                                         <div class="d-flex align-items-start gap-2 mb-3">
                                             <input type="checkbox" class="form-check-input mt-1" id="terms" name="terms" required>
-                                            <div style="font-size:.95rem;">
-                                                <span>I agree to the </span>
-                                                <a href="javascript:void(0)" id="termsLink" class="terms-link">Terms and Conditions</a>
-                                            </div>
+                                            <label class="form-check-label" for="terms" style="font-size:.95rem;">
+                                                I agree to the <a href="#" class="auth-links" id="termsLink">Terms and Conditions</a>
+                                            </label>
                                         </div>
 
                                         <button type="submit" class="btn btn-vd w-100" id="registerBtn" disabled>
@@ -826,7 +814,6 @@
                 <h4 class="vd-modal-title" id="privacyTitle">Data Privacy Notice</h4>
                 <div class="text-muted" style="font-size:.9rem;">Republic Act No. 10173 (Data Privacy Act of 2012)</div>
             </div>
-            <button class="vd-modal-close" id="privacyClose" aria-label="Close privacy">&times;</button>
         </div>
 
         <div class="vd-modal-body">
@@ -938,10 +925,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const privacyCheckbox = document.getElementById('privacy');
     const privacyModalCheck = document.getElementById('privacyModalCheck');
     const agreeBtn = document.getElementById('agreePrivacyBtn');
-    const privacyClose = document.getElementById('privacyClose');
     const termsClose = document.getElementById('termsClose');
-    const privacyLink = document.getElementById('privacyLink');
-    const termsLink = document.getElementById('termsLink');
 
     function openModal(modalEl){
         if (!modalEl) return;
@@ -954,14 +938,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!modalEl) return;
         modalEl.style.display = 'none';
         modalEl.setAttribute('aria-hidden', 'true');
-
-        const anotherOpenModal =
-            (privacyPopup && privacyPopup.style.display === 'flex') ||
-            (termsPopup && termsPopup.style.display === 'flex');
-
-        if (!anotherOpenModal) {
-            document.body.classList.remove('modal-open');
-        }
+        document.body.classList.remove('modal-open');
     }
 
     function openPrivacyModal(){
@@ -972,13 +949,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (agreeBtn) agreeBtn.disabled = true;
     }
 
-    if (isStep1 && privacyPopup) {
-        openPrivacyModal();
-    }
+    if (isStep1 && privacyPopup) openPrivacyModal();
 
-    privacyLink?.addEventListener('click', function(e){
+    document.getElementById('privacyLink')?.addEventListener('click', function(e){
         e.preventDefault();
-        e.stopPropagation();
         openPrivacyModal();
     });
 
@@ -997,13 +971,8 @@ document.addEventListener('DOMContentLoaded', function () {
         closeModal(privacyPopup);
     });
 
-    privacyClose?.addEventListener('click', function(){
-        closeModal(privacyPopup);
-    });
-
-    termsLink?.addEventListener('click', function(e){
+    document.getElementById('termsLink')?.addEventListener('click', function(e){
         e.preventDefault();
-        e.stopPropagation();
         openModal(termsPopup);
     });
 
@@ -1015,9 +984,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.target === termsPopup){
             closeModal(termsPopup);
         }
-        if (e.target === privacyPopup){
-            closeModal(privacyPopup);
-        }
     });
 
     const termsCheckbox = document.getElementById('terms');
@@ -1028,6 +994,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Prevent double-click on Send OTP
     const sendOtpForm = document.getElementById('sendOtpForm');
     const sendOtpBtn  = document.getElementById('sendOtpBtn');
     if (sendOtpForm && sendOtpBtn) {
@@ -1069,7 +1036,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const registerConfirmPasswordInput = document.getElementById('password_confirmation');
     const registerPasswordRules = document.getElementById('registerPasswordRules');
     const registerMatchIndicator = document.getElementById('registerMatchIndicator');
-
     if (registerPasswordInput && registerPasswordRules) {
         const ruleEls = {
             uppercase: registerPasswordRules.querySelector('[data-rule="uppercase"]'),
@@ -1092,6 +1058,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 el.classList.toggle('is-met', checks[key]);
             });
         };
+
+        registerPasswordInput.addEventListener('input', function () {
+            updatePasswordRules(this.value || '');
+            updatePasswordMatch();
+        });
+
+        updatePasswordRules(registerPasswordInput.value || '');
 
         const updatePasswordMatch = () => {
             if (!registerMatchIndicator || !registerConfirmPasswordInput) return;
@@ -1116,17 +1089,11 @@ document.addEventListener('DOMContentLoaded', function () {
             registerMatchIndicator.classList.add('is-mismatch');
         };
 
-        registerPasswordInput.addEventListener('input', function () {
-            updatePasswordRules(this.value || '');
-            updatePasswordMatch();
-        });
-
         registerConfirmPasswordInput?.addEventListener('input', updatePasswordMatch);
-
-        updatePasswordRules(registerPasswordInput.value || '');
         updatePasswordMatch();
     }
 
+    // OTP Boxes logic (Step 2)
     const otpWrap = document.getElementById('otpInputs');
     const otpHidden = document.getElementById('otpHidden');
 
@@ -1187,6 +1154,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 150);
     }
 
+    // Shake + clear on server OTP error
     @if(session('otp_error'))
     if (otpWrap && inputs.length) {
         otpWrap.classList.add('otp-error');
@@ -1205,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     @endif
 
+    // Phone digits-only + max 11
     const phoneInput = document.getElementById('phone');
     if (phoneInput) {
         phoneInput.addEventListener('input', function () {
@@ -1212,6 +1181,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // OTP expiry + resend cooldown (continues on reload)
     @if(session('otp_sent') && !session('otp_verified'))
         const timerEl = document.getElementById('otpTimer');
         const verifyBtn = document.getElementById('verifyOtpBtn');
@@ -1220,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const openResend = document.getElementById('openResend');
         const resendCountdownEl = document.getElementById('resendCountdown');
 
+        // OTP expiry timer
         if (timerEl){
             let timeLeft = parseInt(timerEl.dataset.remaining || "0", 10);
 
@@ -1249,6 +1220,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 1000);
         }
 
+        // Resend cooldown
         let resendLeft = {{ (int)($resendRemaining ?? 0) }};
 
         const setResendState = () => {
