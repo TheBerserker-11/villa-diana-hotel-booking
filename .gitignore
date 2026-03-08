@@ -8,6 +8,9 @@
 /storage/framework/cache/*
 /storage/framework/sessions/*
 /storage/framework/views/*
+!/storage/app/
+!/storage/app/public/
+!/storage/app/public/**
 /bootstrap/cache/*.php
 /database/*.log
 /vendor
