@@ -30,6 +30,7 @@
                                 class="form-control vd-input @error('check_in') is-invalid @enderror"
                                 placeholder="Select date"
                                 value="{{ request()->query('check_in') }}"
+                                readonly
                             >
                         </div>
                     </div>
@@ -50,6 +51,7 @@
                                 class="form-control vd-input @error('check_out') is-invalid @enderror"
                                 placeholder="Select date"
                                 value="{{ request()->query('check_out') }}"
+                                readonly
                             >
                         </div>
                     </div>
@@ -76,7 +78,7 @@
                             <span class="vd-guest-left">
                                 <i class="fa fa-users"></i>
                                 <span>
-                                    <strong id="vdGuestTotal">{{ $totalGuests }}</strong> 
+                                    <strong id="vdGuestTotal">{{ $totalGuests }}</strong>
                                     <span id="vdGuestLabel">guest{{ $totalGuests > 1 ? 's' : '' }}</span>
                                 </span>
                             </span>
@@ -145,7 +147,7 @@
                 <div class="vd-booking-foot">
                     <div class="vd-booking-note">
                         <i class="fa fa-info-circle me-2"></i>
-                        You can adjust guests anytime before confirming.
+                        Booked dates are automatically disabled.
                     </div>
 
                     <button type="submit" class="vd-booking-btn">
@@ -159,6 +161,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  const bookedRanges = @json($bookedRanges ?? []);
+
   const form = document.getElementById('availabilityForm');
 
   const checkInEl = document.getElementById('check_in');
@@ -320,15 +324,34 @@ document.addEventListener('DOMContentLoaded', () => {
     disableMobile: true,
     weekNumbers: false,
     locale: fpLocale,
+    disable: bookedRanges,
     onChange: (_, dateStr) => {
+      clearFieldError(checkInEl);
+
       if (!checkOutPicker) return;
-      checkOutPicker.set('minDate', dateStr);
+
+      const nextDay = new Date(dateStr + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      checkOutPicker.set('minDate', nextDay);
+
+      if ((checkOutEl?.value || '') && checkOutEl.value <= dateStr) {
+        checkOutPicker.clear();
+        checkOutEl.value = '';
+      }
+
       setTimeout(() => checkOutPicker.open(), 150);
     }
   });
 
   checkOutPicker = flatpickr('#check_out', {
-    minDate: checkInValue || 'today',
+    minDate: checkInValue
+      ? (() => {
+          const nextDay = new Date(checkInValue + 'T00:00:00');
+          nextDay.setDate(nextDay.getDate() + 1);
+          return nextDay;
+        })()
+      : 'today',
     dateFormat: 'Y-m-d',
     defaultDate: checkOutValue || null,
     showMonths: getShowMonths(),
@@ -337,6 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
     disableMobile: true,
     weekNumbers: false,
     locale: fpLocale,
+    disable: bookedRanges,
+    onChange: () => clearFieldError(checkOutEl),
   });
 
   const togglePicker = (picker) => {
@@ -351,6 +376,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   checkOutEl?.addEventListener('click', (e) => {
     e.preventDefault();
+    if (!checkInEl?.value) {
+      showFieldError(checkInEl, 'Please select your check-in date first.');
+      return;
+    }
     togglePicker(checkOutPicker);
   });
 
@@ -359,9 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkInPicker?.set('showMonths', months);
     checkOutPicker?.set('showMonths', months);
   });
-
-  checkInEl?.addEventListener('change', () => clearFieldError(checkInEl));
-  checkOutEl?.addEventListener('change', () => clearFieldError(checkOutEl));
 
   form?.addEventListener('submit', (e) => {
     clearFieldError(checkInEl);
