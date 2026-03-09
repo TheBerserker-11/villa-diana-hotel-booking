@@ -12,10 +12,6 @@ use Illuminate\Support\Facades\Log;
 
 class CustomerController extends Controller
 {
-    /**
-     * Persist redirect across: register -> sendOtp -> verifyOtp -> registerFinal
-     * Accepts redirect from query or post, stores in session('redirect').
-     */
     private function persistRedirect(Request $request): void
     {
         $redirect = $request->input('redirect') ?? $request->query('redirect') ?? session('redirect');
@@ -23,19 +19,13 @@ class CustomerController extends Controller
         if (is_string($redirect)) {
             $redirect = trim($redirect);
 
-            // Only store "safe" internal redirects. Prevent open-redirect attacks.
-            // Allow:
-            // - full internal path: /booking/summary?... (starts with /)
-            // - route-like string without scheme/host
             if ($redirect !== '') {
-                // If they passed a full URL (http/https), convert to internal path + query
                 if (preg_match('#^https?://#i', $redirect)) {
                     $path = parse_url($redirect, PHP_URL_PATH) ?: '/';
                     $query = parse_url($redirect, PHP_URL_QUERY);
                     $redirect = $path . ($query ? '?' . $query : '');
                 }
 
-                // Only allow safe internal redirects
                 if (str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
                     session(['redirect' => $redirect]);
                     session(['url.intended' => $redirect]);
@@ -48,7 +38,6 @@ class CustomerController extends Controller
     {
         $this->persistRedirect($request);
 
-        // Save booking intent (if they came from room booking)
         if ($request->filled('room_id')) {
             session([
                 'booking_intent' => [
@@ -73,7 +62,6 @@ class CustomerController extends Controller
 
         $digits = preg_replace('/\D+/', '', $phone);
 
-        // Convert 63xxxxxxxxxx to 09xxxxxxxxx
         if (strlen($digits) === 12 && str_starts_with($digits, '63')) {
             $digits = '0' . substr($digits, 2);
         }
@@ -84,12 +72,12 @@ class CustomerController extends Controller
     public function sendOtp(Request $request)
     {
         $this->persistRedirect($request);
-    
+
         $request->merge([
             'name'  => $this->normalizeName($request->input('name')),
             'email' => $request->filled('email') ? strtolower(trim($request->email)) : $request->email,
         ]);
-    
+
         $request->validate([
             'name' => [
                 'required',
@@ -112,32 +100,30 @@ class CustomerController extends Controller
             'email.unique'      => 'That email is already registered.',
             'privacy.accepted'  => 'You must agree to the Data Privacy Policy.',
         ]);
-    
-        // Rate limit: 1 OTP per 60s per email+ip
+
         $key = 'send-otp:' . strtolower($request->email) . '|' . $request->ip();
-    
+
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
             session(['otp_sent' => true]);
-    
+
             return back()
                 ->withInput()
                 ->withErrors(['email' => "OTP already sent. Please wait {$seconds} seconds and try again."]);
         }
 
-    RateLimiter::hit($key, 60);
+        RateLimiter::hit($key, 60);
 
-    // New OTP request => reset OTP session
-       session()->forget([
-        'otp',
-        'otp_expires_at',
-        'otp_resend_available_at',
-        'otp_verified',
-        'otp_attempts',
-    ]);
+        session()->forget([
+            'otp',
+            'otp_expires_at',
+            'otp_resend_available_at',
+            'otp_verified',
+            'otp_attempts',
+        ]);
 
         $otp = random_int(100000, 999999);
-    
+
         session([
             'register_name'           => $request->name,
             'register_email'          => $request->email,
@@ -147,20 +133,20 @@ class CustomerController extends Controller
             'otp_verified'            => false,
             'otp_sent'                => true,
         ]);
-    
+
         try {
             Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($request) {
                 $message->to($request->email)
                     ->subject('Your Villa Diana Hotel Verification Code');
             });
         } catch (\Exception $e) {
-            \Log::error('OTP mail failed: ' . $e->getMessage());
-    
+            Log::error('OTP mail failed: ' . $e->getMessage());
+
             return back()
                 ->withInput()
                 ->withErrors(['email' => 'Failed to send OTP email. Please try again later.']);
         }
-    
+
         return back()->withInput()->with('success', 'OTP sent to your email.');
     }
 
@@ -174,7 +160,6 @@ class CustomerController extends Controller
             'otp.digits' => 'OTP must be exactly 6 digits.',
         ]);
 
-        // Keep UI on Step 2 during verify attempts
         session(['otp_sent' => true]);
 
         $sentOtp   = session('otp');
@@ -185,40 +170,47 @@ class CustomerController extends Controller
         }
 
         if (now()->timestamp > (int) $expiresAt) {
-            session()->forget(['otp', 'otp_expires_at', 'otp_resend_available_at', 'otp_verified']);
+            session()->forget([
+                'otp',
+                'otp_expires_at',
+                'otp_resend_available_at',
+                'otp_verified',
+                'otp_attempts',
+            ]);
+
             session(['otp_sent' => true]);
 
             return back()->with('otp_error', 'OTP expired. Please request a new one.');
         }
 
         if ((string) $request->otp !== (string) $sentOtp) {
-    session(['otp_attempts' => session('otp_attempts', 0) + 1]);
+            session(['otp_attempts' => session('otp_attempts', 0) + 1]);
 
-    if (session('otp_attempts') >= 3) {
-        session()->forget([
-            'otp',
-            'otp_verified',
-            'otp_attempts',
-            'otp_expires_at',
-            'otp_resend_available_at',
+            if (session('otp_attempts') >= 3) {
+                session()->forget([
+                    'otp',
+                    'otp_verified',
+                    'otp_attempts',
+                    'otp_expires_at',
+                    'otp_resend_available_at',
+                ]);
+
+                session(['otp_sent' => true]);
+
+                return back()->with('otp_error', 'Too many attempts. Request a new OTP.');
+            }
+
+            return back()->with('otp_error', 'Invalid OTP. Please try again.');
+        }
+
+        session([
+            'otp_verified' => true,
+            'otp_sent'     => true,
         ]);
 
-        session(['otp_sent' => true]);
+        session()->forget('otp_attempts');
 
-        return back()->with('otp_error', 'Too many attempts. Request a new OTP.');
-    }
-
-    return back()->with('otp_error', 'Invalid OTP. Please try again.');
-}
-
-session([
-    'otp_verified' => true,
-    'otp_sent'     => true,
-]);
-
-session()->forget('otp_attempts');
-
-return back()->with('success', 'OTP verified. Please set your password.');
+        return back()->with('success', 'OTP verified. Please set your password.');
     }
 
     public function registerFinal(Request $request)
@@ -267,11 +259,11 @@ return back()->with('success', 'OTP verified. Please set your password.');
             'terms.accepted'  => 'You must agree to the Terms and Conditions.',
         ]);
 
-        // Final safety re-check
         if (User::where('name', $name)->exists()) {
             return redirect()->route('register', session('redirect') ? ['redirect' => session('redirect')] : [])
                 ->withErrors(['error' => 'That full name is already registered.']);
         }
+
         if (User::where('email', $email)->exists()) {
             return redirect()->route('register', session('redirect') ? ['redirect' => session('redirect')] : [])
                 ->withErrors(['error' => 'That email is already registered.']);
@@ -287,23 +279,21 @@ return back()->with('success', 'OTP verified. Please set your password.');
             'email_verified_at' => now(),
         ]);
 
-        // Clear OTP + registration session (keep redirect until after we use it)
         session()->forget([
             'otp',
             'otp_expires_at',
             'otp_resend_available_at',
             'otp_verified',
             'otp_sent',
+            'otp_attempts',
             'register_name',
             'register_email',
         ]);
 
         Auth::login($user);
 
-        // ✅ Prefer explicit session redirect, fallback to intended, fallback home
         $to = session('redirect') ?? session('url.intended');
 
-        // Once used, you can forget redirect (optional)
         session()->forget(['redirect', 'url.intended']);
 
         if ($to) {
