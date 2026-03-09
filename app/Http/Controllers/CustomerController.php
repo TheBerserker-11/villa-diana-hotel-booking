@@ -81,73 +81,81 @@ class CustomerController extends Controller
     }
 
     public function sendOtp(Request $request)
-    {
-        $this->persistRedirect($request);
+{
+    $this->persistRedirect($request);
 
-        $request->merge([
-            'name'  => $this->normalizeName($request->input('name')),
-            'email' => $request->filled('email') ? strtolower(trim($request->email)) : $request->email,
-        ]);
+    $request->merge([
+        'name'  => $this->normalizeName($request->input('name')),
+        'email' => $request->filled('email') ? strtolower(trim($request->email)) : $request->email,
+    ]);
 
-        $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-                'regex:/^[A-Za-z]+(?:[ .\'-][A-Za-z]+)*$/',
-                'unique:users,name',
-            ],
-            'email' => [
-                'required',
-                'email:rfc,dns',
-                'max:255',
-                'unique:users,email',
-            ],
-            'privacy' => 'accepted',
-        ], [
-            'name.regex'        => 'Full name must contain letters only (spaces, dot, apostrophe, hyphen allowed).',
-            'name.unique'       => 'That full name is already registered.',
-            'email.unique'      => 'That email is already registered.',
-            'privacy.accepted'  => 'You must agree to the Data Privacy Policy.',
-        ]);
+    $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'min:2',
+            'max:255',
+            'regex:/^[A-Za-z]+(?:[ .\'-][A-Za-z]+)*$/',
+            'unique:users,name',
+        ],
+        'email' => [
+            'required',
+            'email',
+            'max:255',
+            'unique:users,email',
+        ],
+        'privacy' => 'accepted',
+    ], [
+        'name.regex'        => 'Full name must contain letters only (spaces, dot, apostrophe, hyphen allowed).',
+        'name.unique'       => 'That full name is already registered.',
+        'email.unique'      => 'That email is already registered.',
+        'privacy.accepted'  => 'You must agree to the Data Privacy Policy.',
+    ]);
 
-        // Rate limit: 1 OTP per 60s per email+ip
-        $key = 'send-otp:' . strtolower($request->email) . '|' . $request->ip();
+    // Rate limit: 1 OTP per 60s per email+ip
+    $key = 'send-otp:' . strtolower($request->email) . '|' . $request->ip();
 
-        if (RateLimiter::tooManyAttempts($key, 1)) {
-            $seconds = RateLimiter::availableIn($key);
-            session(['otp_sent' => true]);
+    if (RateLimiter::tooManyAttempts($key, 1)) {
+        $seconds = RateLimiter::availableIn($key);
+        session(['otp_sent' => true]);
 
-            return back()
-                ->withInput()
-                ->withErrors(['email' => "OTP already sent. Please wait {$seconds} seconds and try again."]);
-        }
+        return back()
+            ->withInput()
+            ->withErrors(['email' => "OTP already sent. Please wait {$seconds} seconds and try again."]);
+    }
 
-        RateLimiter::hit($key, 60);
+    RateLimiter::hit($key, 60);
 
-        // New OTP request => reset OTP session
-        session()->forget(['otp', 'otp_expires_at', 'otp_resend_available_at', 'otp_verified']);
+    // New OTP request => reset OTP session
+    session()->forget(['otp', 'otp_expires_at', 'otp_resend_available_at', 'otp_verified']);
 
-        $otp = random_int(100000, 999999);
+    $otp = random_int(100000, 999999);
 
-        session([
-            'register_name'           => $request->name,
-            'register_email'          => $request->email,
-            'otp'                     => $otp,
-            'otp_expires_at'          => now()->addMinutes(5)->timestamp,
-            'otp_resend_available_at' => now()->addSeconds(60)->timestamp,
-            'otp_verified'            => false,
-            'otp_sent'                => true,
-        ]);
+    session([
+        'register_name'           => $request->name,
+        'register_email'          => $request->email,
+        'otp'                     => $otp,
+        'otp_expires_at'          => now()->addMinutes(5)->timestamp,
+        'otp_resend_available_at' => now()->addSeconds(60)->timestamp,
+        'otp_verified'            => false,
+        'otp_sent'                => true,
+    ]);
 
+    try {
         Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($request) {
             $message->to($request->email)
                 ->subject('OTP Verification - Villa Diana Hotel');
         });
+    } catch (\Exception $e) {
+        \Log::error('OTP mail failed: ' . $e->getMessage());
 
-        return back()->withInput()->with('success', 'OTP sent to your email.');
+        return back()
+            ->withInput()
+            ->withErrors(['email' => 'Failed to send OTP email. Please try again later.']);
     }
+
+    return back()->withInput()->with('success', 'OTP sent to your email.');
+}
 
     public function verifyOtp(Request $request)
     {
