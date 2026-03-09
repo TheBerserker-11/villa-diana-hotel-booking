@@ -145,7 +145,7 @@ class CustomerController extends Controller
     try {
         Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($request) {
             $message->to($request->email)
-                ->subject('OTP Verification - Villa Diana Hotel');
+                ->subject('Your Villa Diana Hotel Verification Code');
         });
     } catch (\Exception $e) {
         \Log::error('OTP mail failed: ' . $e->getMessage());
