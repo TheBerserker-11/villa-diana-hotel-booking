@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Feedback;
 use App\Models\Review;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class PageController extends Controller
 {
@@ -23,10 +25,10 @@ class PageController extends Controller
     {
         return $query->whereDoesntHave('orders', function ($q) use ($checkIn, $checkOut) {
 
-            // ✅ Cancelled bookings must not block rooms
+            // Cancelled bookings must not block rooms
             $q->where('status', '!=', 'cancelled');
 
-            // ✅ Overlap logic
+            // Overlap logic
             $q->where(function ($overlap) use ($checkIn, $checkOut) {
                 $overlap->whereBetween('check_in', [$checkIn, $checkOut])
                         ->orWhereBetween('check_out', [$checkIn, $checkOut])
@@ -43,7 +45,19 @@ class PageController extends Controller
         $rooms = Room::with('roomtype.inclusions')->get();
         $reviews = Review::latest()->take(10)->get();
 
-        return view('pages.home', compact('rooms', 'reviews'));
+        $bookedRanges = Order::whereIn('status', ['pending', 'confirmed'])
+            ->whereNotNull('check_in')
+            ->whereNotNull('check_out')
+            ->get(['check_in', 'check_out'])
+            ->map(function ($booking) {
+                return [
+                    'from' => Carbon::parse($booking->check_in)->format('Y-m-d'),
+                    'to'   => Carbon::parse($booking->check_out)->subDay()->format('Y-m-d'),
+                ];
+            })
+            ->values();
+
+        return view('pages.home', compact('rooms', 'reviews', 'bookedRanges'));
     }
 
     public function list_rooms(Request $request)
@@ -63,7 +77,7 @@ class PageController extends Controller
 
         $totalGuests = max(1, $fields['adults'] + $fields['children'] + $fields['infants']);
 
-        // ✅ Availability filter (cancelled orders won't block anymore)
+        // Availability filter (cancelled orders won't block anymore)
         if ($fields['check_in'] && $fields['check_out']) {
             $roomsQuery = $this->excludeUnavailableRooms($roomsQuery, $fields['check_in'], $fields['check_out']);
         }
@@ -136,7 +150,7 @@ class PageController extends Controller
                 $query->where('room_type_id', $validatedData['room_type_id']);
             });
 
-        // ✅ Availability filter (cancelled orders won't block anymore)
+        // Availability filter (cancelled orders won't block anymore)
         $roomsQuery = $this->excludeUnavailableRooms(
             $roomsQuery,
             $validatedData['check_in'],
