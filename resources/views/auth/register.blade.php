@@ -470,7 +470,6 @@
     $isStep2 = (session('otp_sent') && !session('otp_verified'));
     $isStep3 = (session('otp_verified'));
 
-    // ✅ Redirect persistence (read-only here)
     $redirect = request('redirect') ?? session('redirect');
 @endphp
 
@@ -655,7 +654,9 @@
                                                 </div>
 
                                                 @error('otp') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
-                                                <div class="otp-hint">Enter the 6-digit code from your email.</div>
+                                                <div class="otp-hint">
+                                                    Enter the 6-digit code from your email. Verification will continue automatically once complete.
+                                                </div>
                                             </div>
 
                                             @if(session('otp_error'))
@@ -994,7 +995,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Prevent double-click on Send OTP
     const sendOtpForm = document.getElementById('sendOtpForm');
     const sendOtpBtn  = document.getElementById('sendOtpBtn');
     if (sendOtpForm && sendOtpBtn) {
@@ -1059,13 +1059,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         };
 
-        registerPasswordInput.addEventListener('input', function () {
-            updatePasswordRules(this.value || '');
-            updatePasswordMatch();
-        });
-
-        updatePasswordRules(registerPasswordInput.value || '');
-
         const updatePasswordMatch = () => {
             if (!registerMatchIndicator || !registerConfirmPasswordInput) return;
 
@@ -1089,11 +1082,17 @@ document.addEventListener('DOMContentLoaded', function () {
             registerMatchIndicator.classList.add('is-mismatch');
         };
 
+        registerPasswordInput.addEventListener('input', function () {
+            updatePasswordRules(this.value || '');
+            updatePasswordMatch();
+        });
+
         registerConfirmPasswordInput?.addEventListener('input', updatePasswordMatch);
+
+        updatePasswordRules(registerPasswordInput.value || '');
         updatePasswordMatch();
     }
 
-    // OTP Boxes logic (Step 2)
     const otpWrap = document.getElementById('otpInputs');
     const otpHidden = document.getElementById('otpHidden');
 
@@ -1118,7 +1117,17 @@ document.addEventListener('DOMContentLoaded', function () {
             input.addEventListener('input', () => {
                 input.value = input.value.replace(/\D/g, '').slice(0, 1);
                 syncOtp();
-                if (input.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+
+                if (input.value && idx < inputs.length - 1) {
+                    inputs[idx + 1].focus();
+                }
+
+                const code = otpHidden.value || '';
+                if (code.length === 6) {
+                    setTimeout(() => {
+                        document.getElementById('otpForm')?.requestSubmit();
+                    }, 180);
+                }
             });
 
             input.addEventListener('keydown', (e) => {
@@ -1144,7 +1153,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 const digits = paste.replace(/\D/g, '').slice(0, inputs.length).split('');
                 digits.forEach((d, i) => { inputs[i].value = d; });
                 syncOtp();
-                focusFirstEmpty();
+
+                const code = otpHidden.value || '';
+                if (code.length === 6) {
+                    setTimeout(() => {
+                        document.getElementById('otpForm')?.requestSubmit();
+                    }, 180);
+                } else {
+                    focusFirstEmpty();
+                }
             });
         });
 
@@ -1154,7 +1171,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 150);
     }
 
-    // Shake + clear on server OTP error
     @if(session('otp_error'))
     if (otpWrap && inputs.length) {
         otpWrap.classList.add('otp-error');
@@ -1173,7 +1189,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     @endif
 
-    // Phone digits-only + max 11
     const phoneInput = document.getElementById('phone');
     if (phoneInput) {
         phoneInput.addEventListener('input', function () {
@@ -1181,7 +1196,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // OTP expiry + resend cooldown (continues on reload)
     @if(session('otp_sent') && !session('otp_verified'))
         const timerEl = document.getElementById('otpTimer');
         const verifyBtn = document.getElementById('verifyOtpBtn');
@@ -1190,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const openResend = document.getElementById('openResend');
         const resendCountdownEl = document.getElementById('resendCountdown');
 
-        // OTP expiry timer
         if (timerEl){
             let timeLeft = parseInt(timerEl.dataset.remaining || "0", 10);
 
@@ -1220,7 +1233,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 1000);
         }
 
-        // Resend cooldown
         let resendLeft = {{ (int)($resendRemaining ?? 0) }};
 
         const setResendState = () => {
