@@ -24,7 +24,7 @@
     <!-- LOGO -->
     <tr>
         <td align="center" style="padding:28px 20px 10px 20px;">
-            <img src="{{ asset('img/logo.png') }}"
+            <img src="https://villadiana.shop/img/logo/logo.png"
                  alt="Villa Diana Hotel"
                  width="120"
                  style="display:block;">
