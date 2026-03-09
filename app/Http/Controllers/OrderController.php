@@ -20,7 +20,6 @@ class OrderController extends Controller
 
     public function __construct()
     {
-        // summary page must be accessible to guests, so don't protect it
         $this->middleware('auth')->only(['index', 'store', 'create']);
     }
 
@@ -106,47 +105,46 @@ class OrderController extends Controller
      * Public booking summary route:
      * /booking/summary?room_id=...&check_in=...&check_out=...&adults=...
      */
-   public function summary(Request $request)
-{
-    $fields = $request->validate([
-        'room_id'   => ['required', 'integer', 'exists:rooms,id'],
-        'check_in'  => ['required', 'date'],
-        'check_out' => ['required', 'date', 'after:check_in'],
-        'adults'    => ['required', 'integer', 'min:1'],
-        'children'  => ['nullable', 'integer', 'min:0'],
-        'infants'   => ['nullable', 'integer', 'min:0'],
-        'pets'      => ['nullable', 'integer', 'min:0'],
-    ]);
+    public function summary(Request $request)
+    {
+        $fields = $request->validate([
+            'room_id'   => ['required', 'integer', 'exists:rooms,id'],
+            'check_in'  => ['required', 'date'],
+            'check_out' => ['required', 'date', 'after:check_in'],
+            'adults'    => ['required', 'integer', 'min:1'],
+            'children'  => ['nullable', 'integer', 'min:0'],
+            'infants'   => ['nullable', 'integer', 'min:0'],
+            'pets'      => ['nullable', 'integer', 'min:0'],
+        ]);
 
-    $room = Room::with(['roomtype.inclusions'])->findOrFail($fields['room_id']);
+        $room = Room::with(['roomtype.inclusions'])->findOrFail($fields['room_id']);
 
-    if (Schema::hasColumn('rooms', 'status') && !$room->status) {
-        return redirect()->route('rooms.index')->with('error', 'This room is not available right now.');
+        if (Schema::hasColumn('rooms', 'status') && !$room->status) {
+            return redirect()->route('rooms.index')->with('error', 'This room is not available right now.');
+        }
+
+        $totalGuests = $this->countGuests(
+            (int) $fields['adults'],
+            (int) ($fields['children'] ?? 0),
+            (int) ($fields['infants'] ?? 0)
+        );
+
+        $nights = $this->countNights($fields['check_in'], $fields['check_out']);
+        [$perNight, $extraPax] = $this->computePerNightPrice($room, $totalGuests);
+
+        $pricing = [
+            'per_night' => $perNight,
+            'extra_pax' => $extraPax,
+            'nights'    => $nights,
+        ];
+
+        return view('orders.create', compact(
+            'room',
+            'fields',
+            'pricing',
+            'totalGuests'
+        ));
     }
-
-    $totalGuests = $this->countGuests(
-        (int) $fields['adults'],
-        (int) ($fields['children'] ?? 0),
-        (int) ($fields['infants'] ?? 0)
-    );
-
-    $nights = $this->countNights($fields['check_in'], $fields['check_out']);
-    [$perNight, $extraPax] = $this->computePerNightPrice($room, $totalGuests);
-
-    $pricing = [
-        'per_night' => $perNight,
-        'extra_pax' => $extraPax,
-        'nights'    => $nights,
-    ];
-
-    // IMPORTANT: render the "previous look" page
-    return view('orders.create', compact(
-        'room',
-        'fields',
-        'pricing',
-        'totalGuests'
-    ));
-}
 
     /* ==========================
        STORE BOOKING
@@ -293,12 +291,25 @@ class OrderController extends Controller
 
         $reviews = Review::latest()->take(10)->get();
 
+        $bookedRanges = Order::whereIn('status', ['pending', 'confirmed'])
+            ->whereNotNull('check_in')
+            ->whereNotNull('check_out')
+            ->get(['check_in', 'check_out'])
+            ->map(function ($booking) {
+                return [
+                    'from' => Carbon::parse($booking->check_in)->format('Y-m-d'),
+                    'to'   => Carbon::parse($booking->check_out)->subDay()->format('Y-m-d'),
+                ];
+            })
+            ->values();
+
         return view('pages.rooms', compact(
             'rooms',
             'searched',
             'reviews',
             'totalGuests',
-            'targetCapacity'
+            'targetCapacity',
+            'bookedRanges'
         ));
     }
 
