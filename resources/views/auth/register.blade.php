@@ -563,10 +563,10 @@
                                             <path fill="#4CAF50" d="M24 44c5.186 0 9.862-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.663 36 24 36c-5.189 0-9.625-3.329-11.293-7.946l-6.522 5.025C9.497 39.556 16.688 44 24 44z"/>
                                             <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.055 12.055 0 0 1-4.084 5.571l.003-.002 6.19 5.238C36.971 39.21 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                                         </svg>
-                                        <span>Create account with Google (No OTP)</span>
+                                        <span>Create account with Google </span>
                                     </a>
 
-                                    <div class="divider mb-3">or continue with email + OTP</div>
+                                    <div class="divider mb-3">or continue with email</div>
 
                                     <form method="POST" action="{{ route('send.otp') }}" id="sendOtpForm">
                                         @csrf
