@@ -25,7 +25,7 @@ return [
     ],
 
     'resend' => [
-        'key' => env('re_9X8xiz3b_A1GHwkRmpiX9Za3vwcG4Mz7L'),
+        'key' => env('RESEND_KEY'),
     ],
 
     'google' => [
