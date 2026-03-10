@@ -108,18 +108,42 @@
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-xl-6">
             <div class="vd-card h-100">
                 <div class="vd-card-header"><strong>Admin Activity Logs</strong></div>
                 <div class="vd-card-body p-0">
                     <div class="table-responsive">
-                        <table class="vd-table-bs vd-striped mb-0"><thead class="vd-thead"><tr><th>Admin</th><th>Action</th><th>Target</th><th>When</th></tr></thead><tbody id="tLogs">
-                            @forelse(($activityLogs ?? collect()) as $log)
-                                <tr><td>{{ $log->adminUser?->name ?? 'System' }}</td><td>{{ \Illuminate\Support\Str::headline((string) $log->action) }}</td><td>{{ trim(($log->target_type ?? '-') . ' #' . ($log->target_id ?? '')) }}</td><td>{{ optional($log->created_at)->diffForHumans() ?? '-' }}</td></tr>
-                            @empty
-                                <tr><td colspan="4" class="text-center text-muted py-3">No logs.</td></tr>
-                            @endforelse
-                        </tbody></table>
+                        <table class="vd-table-bs vd-striped mb-0">
+                            <thead class="vd-thead">
+                                <tr>
+                                    <th>Admin</th>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>When</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tLogs">
+                                @forelse(($activityLogs ?? collect()) as $log)
+                                    <tr>
+                                        <td>{{ $log->adminUser?->name ?? 'System' }}</td>
+                                        <td>{{ \Illuminate\Support\Str::headline((string) $log->action) }}</td>
+                                        <td>{{ trim(($log->target_type ?? '-') . ' #' . ($log->target_id ?? '')) }}</td>
+                                        <td>
+                                            {{ optional($log->created_at)?->format('M d, Y h:i A') ?? '-' }}
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ optional($log->created_at)?->diffForHumans() ?? '' }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-3">No logs.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -170,6 +194,7 @@
             occ.data.labels = p.charts?.occupancyTrend?.labels || [];
             occ.data.datasets[0].data = p.charts?.occupancyTrend?.data || [];
             occ.update();
+
             mon.data.labels = p.charts?.monthlyBookings?.labels || [];
             mon.data.datasets[0].data = p.charts?.monthlyBookings?.data || [];
             mon.update();
@@ -187,11 +212,13 @@
             document.getElementById('calLabel').textContent = cal.label || '';
             const grid = document.getElementById('calGrid');
             if (grid) {
-                const offset = Math.max(1, Math.min(7, Number(cal.offset || 1))); let html = '';
+                const offset = Math.max(1, Math.min(7, Number(cal.offset || 1)));
+                let html = '';
                 for (let i = 1; i < offset; i++) html += '<div class="cell e"></div>';
                 (cal.days || []).forEach((d) => html += `<div class="cell ${esc(d.availability)}"><strong>${Number(d.day || 0)}</strong><small>${Number(d.booked_count || 0)} booked</small></div>`);
                 grid.innerHTML = html;
             }
+
             const s = cal.summary || {};
             const summary = document.getElementById('calSummary');
             if (summary) summary.textContent = `${Number(s.booked_days || 0)} booked / ${Number(s.fully_booked_days || 0)} full / ${Number(s.available_days || 0)} available`;
@@ -220,9 +247,31 @@
             if (logs) {
                 const rows = p.tables?.activityLogs || [];
                 logs.innerHTML = rows.length ? rows.map((x) => {
-                    const action = String(x.action || 'activity').replaceAll('_',' ').replace(/\b\w/g, (m) => m.toUpperCase());
-                    const when = x.created_at ? new Date(x.created_at).toLocaleTimeString() : '-';
-                    return `<tr><td>${esc(x.actor || 'System')}</td><td>${esc(action)}</td><td>${esc(x.target || '-')}</td><td>${esc(when)}</td></tr>`;
+                    const action = String(x.action || 'activity')
+                        .replaceAll('_', ' ')
+                        .replace(/\b\w/g, (m) => m.toUpperCase());
+
+                    const dateObj = x.created_at ? new Date(x.created_at) : null;
+                    const when = dateObj
+                        ? dateObj.toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: '2-digit'
+                        }) + ' ' + dateObj.toLocaleTimeString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })
+                        : '-';
+
+                    return `
+                        <tr>
+                            <td>${esc(x.actor || 'System')}</td>
+                            <td>${esc(action)}</td>
+                            <td>${esc(x.target || '-')}</td>
+                            <td>${esc(when)}</td>
+                        </tr>
+                    `;
                 }).join('') : '<tr><td colspan="4" class="text-center text-muted py-3">No logs.</td></tr>';
             }
 
@@ -232,7 +281,10 @@
         } catch (e) {
             console.error(e);
             const b = document.getElementById('liveBadge');
-            if (b) { b.className = 'ms-2 vd-pill vd-pill-danger'; b.textContent = 'OFFLINE'; }
+            if (b) {
+                b.className = 'ms-2 vd-pill vd-pill-danger';
+                b.textContent = 'OFFLINE';
+            }
         }
     }
 
