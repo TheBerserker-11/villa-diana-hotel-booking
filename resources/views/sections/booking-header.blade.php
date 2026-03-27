@@ -147,7 +147,7 @@
                 <div class="vd-booking-foot">
                     <div class="vd-booking-note">
                         <i class="fa fa-info-circle me-2"></i>
-                        Booked dates are automatically disabled.
+                        Booked Rooms are automatically disabled.
                     </div>
 
                     <button type="submit" class="vd-booking-btn">
