@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
+use App\Support\MediaUrl;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Order;
@@ -37,5 +38,10 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class, 'user_id', 'id');
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        return MediaUrl::publicDisk($this->avatar);
     }
 }
