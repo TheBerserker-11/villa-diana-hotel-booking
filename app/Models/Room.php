@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MediaUrl;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -76,7 +77,7 @@ class Room extends Model
             ? $this->image
             : 'rooms/' . ltrim($this->image, '/');
 
-        return asset('storage/' . $path);
+        return MediaUrl::publicDisk($path);
     }
 
     public function getInclusionsAttribute()
