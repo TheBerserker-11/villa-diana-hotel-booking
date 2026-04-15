@@ -18,7 +18,7 @@
         @foreach($event->images as $img)
             <div class="col-md-4">
                 <img
-                    src="{{ asset('storage/events/' . $img->image) }}"
+                    src="{{ $img->image_url }}"
                     class="event-gallery-img"
                     onclick="openModal(this.src)"
                     alt="Event image">
