@@ -62,7 +62,7 @@
                     @if($event->image)
                         <div class="mb-2">
                             <img
-                                src="{{ asset('storage/' . $event->image) }}"
+                                src="{{ $event->image_url }}"
                                 class="img-thumbnail"
                                 style="max-width:180px;"
                                 alt="Main Image"
@@ -89,7 +89,7 @@
                             @foreach($event->images as $img)
                                 <div class="col-6 col-md-3 col-lg-2">
                                     <img
-                                        src="{{ asset('storage/' . $img->image) }}"
+                                        src="{{ $img->image_url }}"
                                         class="img-thumbnail w-100"
                                         style="height:100px;object-fit:cover;"
                                         alt="Event Image"
