@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,6 +47,7 @@ class Order extends Model
         'guest_total_label',
         'guest_breakdown',
         'guest_summary',
+        'proof_image_url',
     ];
 
     protected $casts = [
@@ -121,5 +123,9 @@ class Order extends Model
         return $breakdown === ''
             ? $this->guest_total_label
             : $this->guest_total_label . ' — ' . $breakdown;
+    }
+    public function getProofImageUrlAttribute(): string
+    {
+        return MediaUrl::publicDisk($this->proof_image);
     }
 }
