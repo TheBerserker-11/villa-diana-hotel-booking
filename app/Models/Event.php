@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,10 +23,6 @@ class Event extends Model
 
     public function getImageUrlAttribute(): string
     {
-        if (!$this->image) {
-            return '';
-        }
-
-        return route('media.show', ['path' => ltrim($this->image, '/\\')]);
+        return MediaUrl::publicDisk($this->image);
     }
 }
