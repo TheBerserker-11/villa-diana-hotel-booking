@@ -80,7 +80,7 @@
                                     <div class="vd-slideshow" data-slideshow>
                                         @foreach($event->images as $image)
                                             <img
-                                                src="{{ asset('storage/' . $image->image) }}"
+                                                src="{{ $image->image_url }}"
                                                 class="vd-slide"
                                                 alt="{{ $event->name }}"
                                                 data-event-id="{{ $event->id }}"
