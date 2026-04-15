@@ -15,12 +15,22 @@ class BookingStatusMail extends Mailable
 
     public function __construct(Order $order)
     {
+        $order->loadMissing(['user', 'room.roomType']);
         $this->order = $order;
     }
 
     public function build()
     {
-        return $this->subject('Villa Diana Hotel Booking Status')
-                    ->markdown('emails.booking_status');
+        $status = strtolower((string) ($this->order->status ?? ''));
+
+        $subject = match ($status) {
+            'confirmed' => 'Booking Confirmed - Villa Diana Hotel',
+            'cancelled' => 'Booking Cancelled - Villa Diana Hotel',
+            default => 'Booking Status Update - Villa Diana Hotel',
+        };
+
+        return $this->subject($subject)
+            ->view('emails.booking_status')
+            ->text('emails.booking_status_text');
     }
 }
