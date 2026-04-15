@@ -150,7 +150,7 @@
                                 <div class="d-flex align-items-start gap-3">
                                     <div class="avatar-wrap">
                                         <img
-                                            src="{{ $review->avatar ? asset('storage/' . $review->avatar) : asset('img/default-avatar.jpg') }}"
+                                            src="{{ $review->avatar_url ?: asset('img/default-avatar.jpg') }}"
                                             alt="{{ $review->name }}"
                                             class="review-avatar"
                                         >
