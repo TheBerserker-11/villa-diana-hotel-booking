@@ -19,4 +19,13 @@ class Event extends Model
     {
         return $this->hasMany(EventImage::class);
     }
+
+    public function getImageUrlAttribute(): string
+    {
+        if (!$this->image) {
+            return '';
+        }
+
+        return route('media.show', ['path' => ltrim($this->image, '/\\')]);
+    }
 }
