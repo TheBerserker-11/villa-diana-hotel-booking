@@ -32,7 +32,7 @@
                     <div class="vd-profile d-flex align-items-center gap-3">
                         <img
                             class="vd-avatar flex-shrink-0"
-                            src="{{ $review->avatar ? asset('storage/' . $review->avatar) : 'https://i.pinimg.com/1200x/eb/7e/eb/eb7eeb473794bd14c39f3a3b19d70b65.jpg' }}"
+                            src="{{ $review->avatar_url ?: 'https://i.pinimg.com/1200x/eb/7e/eb/eb7eeb473794bd14c39f3a3b19d70b65.jpg' }}"
                             alt="{{ $review->name }} avatar"
                         >
 
