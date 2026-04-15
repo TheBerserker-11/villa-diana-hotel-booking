@@ -42,7 +42,7 @@
                                 <div style="width:70px; height:70px;">
                                     @if($event->image)
                                         <img
-                                            src="{{ asset('storage/' . $event->image) }}"
+                                            src="{{ $event->image_url }}"
                                             class="rounded"
                                             style="width:70px;height:70px;object-fit:cover;"
                                             alt="Event Image">
@@ -107,7 +107,7 @@
                                 <td class="text-center">
                                     @if($event->image)
                                         <img
-                                            src="{{ asset('storage/' . $event->image) }}"
+                                            src="{{ $event->image_url }}"
                                             class="rounded"
                                             style="width:70px;height:70px;object-fit:cover;"
                                             alt="Event Image">
