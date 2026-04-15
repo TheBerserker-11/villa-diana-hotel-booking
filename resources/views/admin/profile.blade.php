@@ -3,7 +3,7 @@
 
 @section('content')
 @php
-    $avatarUrl = !empty($user->avatar) ? asset('storage/' . $user->avatar) : asset('img/default-avatar.jpg');
+    $avatarUrl = $user->avatar_url ?: asset('img/default-avatar.jpg');
 @endphp
 
 <div class="py-3 vd-page">
