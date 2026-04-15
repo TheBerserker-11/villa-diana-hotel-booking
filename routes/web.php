@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\AmenityController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\ReviewController;
@@ -30,7 +31,9 @@ use App\Http\Controllers\Admin\AdminProfileController;
 | PUBLIC + USER ROUTES (Admins are forced to /admin)
 |--------------------------------------------------------------------------
 | ✅ If admin is logged in and tries to open ANY route here -> redirect('/admin')
-*/
+ */
+Route::get('/media', MediaController::class)->name('media.show');
+
 Route::middleware('admin.redirect')->group(function () {
 
     Route::get('/', [PageController::class, 'index'])->name('home');
