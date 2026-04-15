@@ -146,7 +146,7 @@
                 $userName  = data_get($order, 'user.name', 'N/A');
                 $userEmail = data_get($order, 'user.email');
                 $roomName  = data_get($order, 'room.roomtype.name', 'N/A');
-                $proof     = data_get($order, 'proof_image');
+                $proofUrl  = $order->proof_image_url;
 
                 $refCode   = data_get($order, 'reference_code', '-');
                 $checkIn   = $fmtDate($order->check_in ?? null);
@@ -242,10 +242,10 @@
 
                     <div class="mt-3">
                         <div class="vd-small-muted mb-1">Proof</div>
-                        @if(!empty($proof))
-                            <a href="{{ asset('storage/' . $proof) }}" target="_blank" rel="noopener" class="d-inline-block">
+                        @if($proofUrl !== '')
+                            <a href="{{ $proofUrl }}" target="_blank" rel="noopener" class="d-inline-block">
                                 <img
-                                    src="{{ asset('storage/' . $proof) }}"
+                                    src="{{ $proofUrl }}"
                                     alt="Proof"
                                     style="width:90px;height:90px;object-fit:cover;border-radius:12px;"
                                 >
@@ -315,7 +315,7 @@
                     $userName  = data_get($order, 'user.name', 'N/A');
                     $userEmail = data_get($order, 'user.email');
                     $roomName  = data_get($order, 'room.roomtype.name', 'N/A');
-                    $proof     = data_get($order, 'proof_image');
+                    $proofUrl  = $order->proof_image_url;
 
                     $refCode   = data_get($order, 'reference_code', '-');
 
@@ -365,10 +365,10 @@
                     <td class="fw-bold text-success">₱{{ number_format((float) data_get($order, 'total_amount', 0), 0) }}</td>
 
                     <td>
-                        @if(!empty($proof))
-                            <a href="{{ asset('storage/' . $proof) }}" target="_blank" rel="noopener">
+                        @if($proofUrl !== '')
+                            <a href="{{ $proofUrl }}" target="_blank" rel="noopener">
                                 <img
-                                    src="{{ asset('storage/' . $proof) }}"
+                                    src="{{ $proofUrl }}"
                                     alt="Proof"
                                     style="width:70px;height:70px;object-fit:cover;border-radius:10px;"
                                 >
